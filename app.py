@@ -40,12 +40,15 @@ app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get('DATABASE_URL', 'sqlite:/
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
 # ✅ CONFIGURATION STRIPE CORRECTE - CLÉ VALIDE
-stripe.api_key = os.environ.get('STRIPE_SECRET_KEY', 'sk_test_51RrZtFBKTyRC2RYA1CQCb1KT8HzLx2rG98q5qFwZXHD6Cw0JEkx3dgJPbak8H3EF04cJyQgylhBBP5Jq7Gd8LTHK00i2O0ayeL')
+stripe.api_key = os.environ.get('STRIPE_SECRET_KEY', '')
 
 # Debug Stripe
-print(f"🎯 Stripe configuré: {bool(stripe.api_key)}")
-print(f"🔑 Clé utilisée: {stripe.api_key[:20]}...")
-
+if stripe.api_key:
+    print(f"🎯 Stripe configuré: {bool(stripe.api_key)}")
+    print(f"🔑 Clé utilisée: {stripe.api_key[:20]}...")
+else:
+    print("⚠️  Stripe non configuré - clé secrète manquante")
+    
 # 📁 Configuration des uploads
 UPLOAD_FOLDER = os.path.join("static", "uploads", "tests")
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
