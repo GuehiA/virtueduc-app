@@ -58,8 +58,13 @@ db.init_app(app)
 migrate = Migrate(app, db)  # ⬅️ MIGRATE APRÈS db.init_app(app)
 
 # Configuration OpenAI
+# Configuration OpenAI
 OPENAI_API_KEY = os.environ.get('OPENAI_API_KEY', '')
-client = OpenAI(api_key=OPENAI_API_KEY)
+if OPENAI_API_KEY:
+    client = OpenAI(api_key=OPENAI_API_KEY)
+else:
+    client = None
+    print("⚠️  OpenAI non configuré - clé API manquante")
 
 # 🔐 Décorateurs d'authentification
 def admin_required(f):
