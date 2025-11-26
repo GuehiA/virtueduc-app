@@ -180,19 +180,32 @@ def replace_latex_filter(text):
 
 @app.route('/init-admin')
 def init_admin():
-    """Route pour créer le premier admin (à désactiver après usage)"""
-    if User.query.filter_by(role='admin').first():
-        return "Admin existe déjà"
-    
-    admin = User(
-        email='admin@virtueduc.com',
-        password_hash=generate_password_hash('admin123'),
-        nom='Administrateur',
-        role='admin'
-    )
-    db.session.add(admin)
-    db.session.commit()
-    return "Admin créé avec succès"
+    """Route pour créer le premier admin"""
+    try:
+        # Vérifier si un admin existe déjà
+        existing_admin = User.query.filter_by(role='admin').first()
+        if existing_admin:
+            return f"✅ Admin existe déjà: {existing_admin.email}"
+        
+        # Créer le nouvel admin
+        admin = User(
+            email='ambroiseguehi@gmail.com',
+            password_hash=generate_password_hash('@Riel16@8'),
+            nom='Administrateur Principal',
+            role='admin'
+        )
+        db.session.add(admin)
+        db.session.commit()
+        
+        # Vérifier que l'admin a bien été créé
+        new_admin = User.query.filter_by(email='ambroiseguehi@gmail.com').first()
+        if new_admin:
+            return f"✅ Admin créé avec succès! Email: {new_admin.email}"
+        else:
+            return "❌ Erreur: Admin non créé"
+            
+    except Exception as e:
+        return f"❌ Erreur lors de la création: {str(e)}"
 
 @app.route("/eleve/remediations")
 def eleve_remediations():
