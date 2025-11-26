@@ -13,4 +13,4 @@ stripe==5.5.0
 requests==2.31.0
 psycopg2-binary==2.9.7
 pdfkit==1.0.0
-nltk==3.8.1  # ⬅️ AJOUTEZ CETTE LIGNE
+nltk==3.8.1  # ⬅️ AJOUTEZ CETTE LIGNE À LA FIN
