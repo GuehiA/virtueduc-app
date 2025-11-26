@@ -1,0 +1,2 @@
+mkdir -p migrations/versions
+touch migrations/versions/.gitkeep
