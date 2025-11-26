@@ -28,7 +28,6 @@ from models import (
     RemediationSuggestion, Enseignant, Niveau, Matiere, Unite,
     Lecon, TestSommatif, TestResponse
 )
-from config import OPENAI_API_KEY
 
 # 🚀 Initialisation de l'app Flask
 app = Flask(__name__)
@@ -58,6 +57,8 @@ app.config["UPLOAD_FOLDER"] = UPLOAD_FOLDER
 db.init_app(app)
 migrate = Migrate(app, db)  # ⬅️ MIGRATE APRÈS db.init_app(app)
 
+# Configuration OpenAI
+OPENAI_API_KEY = os.environ.get('OPENAI_API_KEY', '')
 client = OpenAI(api_key=OPENAI_API_KEY)
 
 # 🔐 Décorateurs d'authentification
