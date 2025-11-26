@@ -187,12 +187,13 @@ def init_admin():
         if existing_admin:
             return f"✅ Admin existe déjà: {existing_admin.email}"
         
-        # Créer le nouvel admin
+        # Créer le nouvel admin avec le BON nom de colonne
         admin = User(
             email='ambroiseguehi@gmail.com',
-            password_hash=generate_password_hash('@Riel16@8'),
-            nom='Administrateur Principal',
-            role='admin'
+            mot_de_passe_hash=generate_password_hash('@Riel16@8'),  # ⬅️ CORRIGÉ ICI
+            nom_complet='Administrateur Principal',  # ⬅️ CORRIGÉ ICI (nom_complet au lieu de nom)
+            role='admin',
+            username='admin'  # ⬅️ AJOUTÉ car requis par votre modèle
         )
         db.session.add(admin)
         db.session.commit()
@@ -200,7 +201,7 @@ def init_admin():
         # Vérifier que l'admin a bien été créé
         new_admin = User.query.filter_by(email='ambroiseguehi@gmail.com').first()
         if new_admin:
-            return f"✅ Admin créé avec succès! Email: {new_admin.email}"
+            return f"✅ Admin créé avec succès! Email: {new_admin.email}, Username: {new_admin.username}"
         else:
             return "❌ Erreur: Admin non créé"
             
