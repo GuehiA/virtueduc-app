@@ -6,9 +6,10 @@ Flask-Login==0.6.3
 Flask-WTF==1.1.1
 WTForms==3.0.1
 email-validator==2.0.0
-Pillow==9.5.0  # ⬅️ CHANGER À 9.5.0 (ULTRA STABLE)
+Pillow==9.5.0
 python-dotenv==1.0.0
 gunicorn==21.2.0
 stripe==5.5.0
 requests==2.31.0
 psycopg2-binary==2.9.7
+pdfkit==1.0.0  # ⬅️ AJOUTEZ CETTE LIGNE
