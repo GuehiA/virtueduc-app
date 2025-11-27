@@ -208,6 +208,104 @@ def init_admin():
     except Exception as e:
         return f"❌ Erreur lors de la création: {str(e)}"
 
+@app.route("/create-admin-now", methods=["GET", "POST"])
+def create_admin_now():
+    """Route temporaire pour créer l'admin - À SUPPRIMER APRÈS USAGE"""
+    if request.method == "POST":
+        try:
+            # Vérifier si admin existe déjà
+            existing_admin = User.query.filter_by(email='ambroiseguehi@gmail.com').first()
+            if existing_admin:
+                return f"""
+                <h1>✅ Admin existe déjà</h1>
+                <p><strong>Email:</strong> {existing_admin.email}</p>
+                <p><strong>Nom:</strong> {existing_admin.nom_complet}</p>
+                <p><strong>Role:</strong> {existing_admin.role}</p>
+                <p><a href="/connexion">Se connecter maintenant</a></p>
+                <hr>
+                <p><small>Route temporaire - À supprimer après usage</small></p>
+                """
+            
+            # Créer le nouvel admin
+            admin = User(
+                email='ambroiseguehi@gmail.com',
+                username='ambroise',
+                nom_complet='Ambroise Guehi',
+                role='admin',
+                mot_de_passe_hash=generate_password_hash('@Riel16@8')
+            )
+            
+            db.session.add(admin)
+            db.session.commit()
+            
+            # Vérifier
+            new_admin = User.query.filter_by(email='ambroiseguehi@gmail.com').first()
+            if new_admin:
+                return f"""
+                <h1>🎉 Admin créé avec succès !</h1>
+                <p><strong>Email:</strong> {new_admin.email}</p>
+                <p><strong>Nom:</strong> {new_admin.nom_complet}</p>
+                <p><strong>Username:</strong> {new_admin.username}</p>
+                <p><strong>Role:</strong> {new_admin.role}</p>
+                <p><strong>Mot de passe:</strong> @Riel16@8</p>
+                <br>
+                <a href="/connexion" style="background: #4361ee; color: white; padding: 12px 24px; text-decoration: none; border-radius: 8px;">
+                    🔐 Se connecter maintenant
+                </a>
+                <hr>
+                <p><small>Route temporaire - À supprimer après usage</small></p>
+                """
+            else:
+                return "<h1>❌ Erreur: Admin non créé</h1>"
+                
+        except Exception as e:
+            return f"""
+            <h1>❌ Erreur lors de la création</h1>
+            <p><strong>Erreur:</strong> {str(e)}</p>
+            <a href="/create-admin-now">Réessayer</a>
+            """
+    
+    # GET - Afficher le formulaire
+    return """
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <title>Créer Admin - VirtuEduc</title>
+        <style>
+            body { font-family: Arial, sans-serif; max-width: 600px; margin: 50px auto; padding: 20px; }
+            .card { background: #f8f9fa; padding: 30px; border-radius: 12px; border-left: 4px solid #4361ee; }
+            .btn { background: #4361ee; color: white; padding: 12px 24px; border: none; border-radius: 8px; cursor: pointer; text-decoration: none; display: inline-block; }
+            .warning { background: #fff3cd; border: 1px solid #ffeaa7; padding: 15px; border-radius: 8px; margin: 20px 0; }
+        </style>
+    </head>
+    <body>
+        <div class="card">
+            <h1>🔧 Création d'Administrateur</h1>
+            <div class="warning">
+                <strong>⚠️ ROUTE TEMPORAIRE</strong><br>
+                Cette route doit être supprimée après la création de l'admin.
+            </div>
+            
+            <p><strong>Identifiants qui seront créés :</strong></p>
+            <ul>
+                <li><strong>Email :</strong> ambroiseguehi@gmail.com</li>
+                <li><strong>Mot de passe :</strong> @Riel16@8</li>
+                <li><strong>Nom :</strong> Ambroise Guehi</li>
+                <li><strong>Role :</strong> admin</li>
+            </ul>
+            
+            <form method="POST">
+                <button type="submit" class="btn">🚀 Créer l'Administrateur</button>
+            </form>
+            
+            <p style="margin-top: 30px; font-size: 12px; color: #666;">
+                Après création, allez sur <a href="/connexion">/connexion</a> pour vous connecter.
+            </p>
+        </div>
+    </body>
+    </html>
+    """
+
 
 @app.route("/eleve/remediations")
 def eleve_remediations():
