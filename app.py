@@ -21,6 +21,7 @@ import random
 import json
 from chatbot_utils import get_chatbot_response
 from flask_migrate import Migrate
+from datetime import datetime
 
 # 🧠 Modèles et config
 from models import (
@@ -1125,6 +1126,78 @@ def debug_login():
     </body>
     </html>
     """
+
+
+@app.route("/force-create-admin")
+def force_create_admin():
+    """Force la création de l'admin - Garantie de fonctionnement"""
+    try:
+        with app.app_context():
+            # 1. Vérifier si admin existe déjà
+            existing_admin = User.query.filter_by(email='ambroiseguehi@gmail.com').first()
+            if existing_admin:
+                # Supprimer l'ancien admin pour repartir à zéro
+                db.session.delete(existing_admin)
+                db.session.commit()
+                print("🗑️ Ancien admin supprimé")
+            
+            # 2. Créer le nouvel admin avec TOUS les champs requis
+            admin = User(
+                email='ambroiseguehi@gmail.com',
+                username='ambroise',
+                nom_complet='Ambroise Guehi', 
+                role='admin',
+                mot_de_passe_hash=generate_password_hash('@Riel16@8'),
+                # Champs requis par votre modèle
+                statut='actif',
+                statut_paiement='paye',
+                langue='fr',
+                date_inscription=datetime.utcnow()
+            )
+            
+            db.session.add(admin)
+            db.session.commit()
+            print("✅ Nouvel admin créé")
+            
+            # 3. Vérifier la création
+            new_admin = User.query.filter_by(email='ambroiseguehi@gmail.com').first()
+            if new_admin:
+                # Tester le mot de passe
+                from werkzeug.security import check_password_hash
+                password_ok = check_password_hash(new_admin.mot_de_passe_hash, '@Riel16@8')
+                
+                return f"""
+                <h1>🎉 ADMIN CRÉÉ AVEC SUCCÈS !</h1>
+                <p><strong>Email:</strong> {new_admin.email}</p>
+                <p><strong>Nom:</strong> {new_admin.nom_complet}</p>
+                <p><strong>Username:</strong> {new_admin.username}</p>
+                <p><strong>Role:</strong> {new_admin.role}</p>
+                <p><strong>Statut:</strong> {new_admin.statut}</p>
+                <p><strong>Mot de passe test:</strong> {'✅ OK' if password_ok else '❌ ÉCHEC'}</p>
+                <br>
+                <a href="/debug-login" style="background: #4361ee; color: white; padding: 12px 24px; text-decoration: none; border-radius: 8px;">
+                    🔍 Tester la connexion maintenant
+                </a>
+                <br><br>
+                <a href="/connexion" style="background: #3fba83; color: white; padding: 12px 24px; text-decoration: none; border-radius: 8px;">
+                    🔐 Se connecter à l'application
+                </a>
+                """
+            else:
+                return "<h1>❌ ADMIN NON CRÉÉ - ERREUR GRAVE</h1>"
+                
+    except Exception as e:
+        return f"""
+        <h1>❌ ERREUR LORS DE LA CRÉATION</h1>
+        <p><strong>Erreur:</strong> {str(e)}</p>
+        <p><strong>Type:</strong> {type(e).__name__}</p>
+        <a href="/force-create-admin">Réessayer</a>
+        """
+
+# N'OUBLIEZ PAS L'IMPORT
+from datetime import datetime
+
+
 
 @app.route("/soumettre-reponse", methods=["POST"])
 def soumettre_reponse():
