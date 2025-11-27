@@ -1943,9 +1943,17 @@ def inscription_eleve():
     
     form = InscriptionEleveForm()
     
-    # Remplir les choix de niveau
-    niveaux = Niveau.query.all()
-    form.niveau.choices = [(n.id, n.nom) for n in niveaux]
+    # Remplir les choix de niveau - CORRECTION ICI
+    try:
+        niveaux = Niveau.query.order_by(Niveau.ordre.asc()).all()
+        form.niveau.choices = [(n.id, n.nom) for n in niveaux] if niveaux else []
+        
+        # Debug: Vérifier ce qui est récupéré
+        print(f"🎯 Niveaux récupérés: {[(n.id, n.nom) for n in niveaux]}")
+        
+    except Exception as e:
+        print(f"❌ Erreur récupération niveaux: {e}")
+        form.niveau.choices = []
     
     if request.method == 'POST' and form.validate_on_submit():
         # Vérifier les doublons
@@ -2076,7 +2084,7 @@ def inscription_eleve():
             flash("Une erreur est survenue lors de la création du compte", "error")
     
     lang = session.get('lang', 'fr')
-    return render_template("inscription_eleve.html", form=form, lang=lang)
+    return render_template("inscription_eleve.html", form=form, lang=lang, niveaux=niveaux)
 
 @app.route("/upgrade-options")
 def upgrade_options():
