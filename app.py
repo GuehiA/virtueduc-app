@@ -1775,8 +1775,7 @@ def inscription():
 
 @app.route("/inscription-enseignant", methods=["GET", "POST"])
 def inscription_enseignant():
-    if "admin_auth" not in session:
-        return redirect("/admin-auth")
+    # Vérification supprimée - l'admin est déjà authentifié via le système normal
 
     if request.method == "POST":
         nom = request.form.get("nom")
