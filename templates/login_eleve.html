@@ -279,6 +279,26 @@
       border: 1px solid #c3e6cb;
     }
 
+    .alert-info {
+      background: #d1ecf1;
+      color: #0c5460;
+      border: 1px solid #bee5eb;
+    }
+
+    .parent-info {
+      background: #e8f4fd;
+      border: 1px solid #3498db;
+      border-radius: var(--border-radius);
+      padding: 15px;
+      margin-bottom: 20px;
+      text-align: center;
+    }
+
+    .parent-info i {
+      color: #3498db;
+      margin-right: 8px;
+    }
+
     @media (max-width: 576px) {
       .login-box {
         padding: 40px 25px;
@@ -365,12 +385,24 @@
       
       <h2>{% if lang == 'en' %}Student Login{% else %}Connexion Élève{% endif %}</h2>
 
+      <!-- Message spécial pour les parents -->
+      {% if parent_connecte %}
+      <div class="parent-info">
+        <i class="fas fa-info-circle"></i>
+        {% if lang == 'en' %}
+          You are accessing as a parent. Enter your child's credentials to view their dashboard.
+        {% else %}
+          Vous accédez en tant que parent. Saisissez les identifiants de votre enfant pour voir son tableau de bord.
+        {% endif %}
+      </div>
+      {% endif %}
+
       <!-- Messages d'erreur/succès -->
       {% with messages = get_flashed_messages(with_categories=true) %}
         {% if messages %}
           {% for category, message in messages %}
-            <div class="alert alert-{{ 'error' if category == 'error' else 'success' }}">
-              <i class="fas fa-{{ 'exclamation-triangle' if category == 'error' else 'check-circle' }}"></i>
+            <div class="alert alert-{{ 'error' if category == 'error' else 'info' if category == 'info' else 'success' }}">
+              <i class="fas fa-{{ 'exclamation-triangle' if category == 'error' else 'info-circle' if category == 'info' else 'check-circle' }}"></i>
               {{ message }}
             </div>
           {% endfor %}
@@ -419,9 +451,18 @@
         </a>
       </div>
 
-      <a class="back-link" href="{{ url_for('index') }}">
-        ← {% if lang == 'en' %}Back to Home{% else %}Retour à l'accueil{% endif %}
-      </a>
+      <!-- Lien de retour intelligent -->
+      {% if parent_connecte %}
+        <!-- Parent connecté : retour au dashboard parent -->
+        <a class="back-link" href="{{ url_for('dashboard_parent') }}">
+          ← {% if lang == 'en' %}Back to Parent Dashboard{% else %}Retour au tableau de bord parent{% endif %}
+        </a>
+      {% else %}
+        <!-- Utilisateur normal : retour à l'accueil -->
+        <a class="back-link" href="{{ url_for('index') }}">
+          ← {% if lang == 'en' %}Back to Home{% else %}Retour à l'accueil{% endif %}
+        </a>
+      {% endif %}
     </div>
   </div>
 
@@ -444,38 +485,7 @@
         
         particlesContainer.appendChild(particle);
       }
-      
-      // Animation des interactions
-      const inputs = document.querySelectorAll('input');
-      
-      inputs.forEach(input => {
-        input.addEventListener('focus', function() {
-          this.style.transform = 'translateY(-2px)';
-          this.style.boxShadow = '0 12px 28px rgba(52, 152, 219, 0.2)';
-        });
-        
-        input.addEventListener('blur', function() {
-          this.style.transform = 'translateY(0)';
-          this.style.boxShadow = '0 8px 24px rgba(52, 152, 219, 0.15)';
-        });
-      });
     });
-
-    // Afficher/masquer le mot de passe (optionnel)
-    function togglePassword() {
-      const passwordInput = document.getElementById('mot_de_passe');
-      const icon = document.querySelector('.input-icon .fa-lock');
-      
-      if (passwordInput.type === 'password') {
-        passwordInput.type = 'text';
-        icon.classList.remove('fa-lock');
-        icon.classList.add('fa-lock-open');
-      } else {
-        passwordInput.type = 'password';
-        icon.classList.remove('fa-lock-open');
-        icon.classList.add('fa-lock');
-      }
-    }
   </script>
 
 </body>

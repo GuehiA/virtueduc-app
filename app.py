@@ -3131,7 +3131,7 @@ def dashboard_eleve():
 
     # 📊 Statistiques
     from sqlalchemy.sql import func
-    from datetime import datetime
+    from datetime import datetime, timedelta
     import matplotlib
     matplotlib.use('Agg')
     import matplotlib.pyplot as plt
@@ -3152,30 +3152,56 @@ def dashboard_eleve():
         "success": taux_reussite
     }
 
-    # 📈 Courbe progression
+    # 📈 Courbe progression - MOYENNE PAR JOUR
     courbe_progression = None
     if reponses_eleve:
-        dates = [r.timestamp.strftime("%d/%m") for r in reponses_eleve]
-        etoiles = etoiles_values
+        # Grouper les réponses par date et calculer la moyenne des étoiles par jour
+        reponses_par_jour = {}
+        for reponse in reponses_eleve:
+            date_str = reponse.timestamp.strftime("%Y-%m-%d")
+            if date_str not in reponses_par_jour:
+                reponses_par_jour[date_str] = []
+            reponses_par_jour[date_str].append(reponse.etoiles or 0)
+        
+        # Calculer la moyenne par jour
+        dates_ordonnees = sorted(reponses_par_jour.keys())
+        moyennes_journalieres = []
+        
+        for date_str in dates_ordonnees:
+            etoiles_du_jour = reponses_par_jour[date_str]
+            moyenne_jour = sum(etoiles_du_jour) / len(etoiles_du_jour)
+            moyennes_journalieres.append(round(moyenne_jour, 2))
+        
+        # Formater les dates pour l'affichage
+        dates_formatees = [datetime.strptime(date_str, "%Y-%m-%d").strftime("%d/%m") for date_str in dates_ordonnees]
 
+        # Créer le graphique
         fig = plt.figure(figsize=(6, 2.5))
         ax = fig.add_subplot(111)
 
-        titre = "Vos Étoiles Récentes" if lang == "fr" else "Your Recent Stars"
+        titre = "Moyenne des Étoiles par Jour" if lang == "fr" else "Daily Average Stars"
         label_y = "Étoiles" if lang == "fr" else "Stars"
 
-        ax.plot(dates, etoiles, marker="o", color="blue")
-        ax.set_title(titre)
-        ax.set_ylabel(label_y)
+        ax.plot(dates_formatees, moyennes_journalieres, marker="o", color="blue", linewidth=2, markersize=4)
+        ax.set_title(titre, fontsize=12, fontweight='bold')
+        ax.set_ylabel(label_y, fontweight='bold')
         ax.set_ylim(0, 5.5)
+        ax.grid(True, alpha=0.3)
         ax.tick_params(axis='x', rotation=45)
+        
+        # Ajouter les valeurs sur les points
+        for i, (date, valeur) in enumerate(zip(dates_formatees, moyennes_journalieres)):
+            ax.annotate(f'{valeur}', (date, valeur), 
+                       textcoords="offset points", xytext=(0,10), ha='center', fontsize=8)
+        
         fig.tight_layout()
 
         buf = io.BytesIO()
-        fig.savefig(buf, format="png")
+        fig.savefig(buf, format="png", dpi=100, bbox_inches='tight')
         buf.seek(0)
         courbe_progression = base64.b64encode(buf.read()).decode('utf-8')
         buf.close()
+        plt.close(fig)
 
     # ⏰ CALCUL TEMPS RESTANT ESSAI GRATUIT
     temps_restant = None
@@ -3266,7 +3292,6 @@ def dashboard_eleve():
         remediations_completees=remediations_completees,
         date_du_jour=datetime.utcnow()
     )
-
 
 @app.route("/create-profile", methods=["POST"])
 def create_profile():
@@ -4795,6 +4820,9 @@ def supprimer_eleve(eleve_id):
 def login_eleve():
     from models import User
     
+    # Vérifier si un parent est connecté (pour le lien de retour)
+    parent_connecte = 'parent_id' in session
+    
     if request.method == 'POST':
         email = request.form.get("email")
         mot_de_passe = request.form.get("mot_de_passe")
@@ -4804,7 +4832,7 @@ def login_eleve():
             # Vérifier si l'essai est expiré
             if eleve.essai_est_expire():
                 flash("Votre période d'essai gratuit de 48h est terminée. Veuillez vous abonner.", "error")
-                return render_template("login_eleve.html", lang=session.get('lang', 'fr'))
+                return render_template("login_eleve.html", lang=session.get('lang', 'fr'), parent_connecte=parent_connecte)
             
             # Afficher le temps restant pour l'essai
             if eleve.est_en_essai_gratuit():
@@ -4819,15 +4847,19 @@ def login_eleve():
                 
                 flash(message, "info")
 
-            # Connexion
+            # Connexion - IMPORTANT: on ne supprime pas la session parent
             session['eleve_id'] = eleve.id
             session['eleve_username'] = eleve.username
+            
+            # Redirection selon le contexte
+            if parent_connecte:
+                flash(f"Connecté en tant qu'élève : {eleve.nom_complet}", "success")
             return redirect(url_for('dashboard_eleve'))
         else:
             flash("Identifiants incorrects", "error")
 
     lang = session.get('lang', 'fr')
-    return render_template("login_eleve.html", lang=lang)
+    return render_template("login_eleve.html", lang=lang, parent_connecte=parent_connecte)
 
 @app.before_request
 def before_request():
