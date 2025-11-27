@@ -1063,6 +1063,68 @@ def faire_exercice(ex_id):
         show_feedback=bool(reponse_existante),  # Afficher la rétroaction si exercice déjà fait
         already_completed=bool(reponse_existante)  # Indiquer que l'exercice est déjà terminé
     )
+@app.route("/debug-login", methods=["GET", "POST"])
+def debug_login():
+    """Debug de la connexion admin"""
+    if request.method == "POST":
+        email = request.form.get("email")
+        password = request.form.get("password")
+        
+        # 1. Vérifier si l'utilisateur existe
+        user = User.query.filter_by(email=email).first()
+        
+        if not user:
+            return f"""
+            <h1>❌ Utilisateur non trouvé</h1>
+            <p><strong>Email:</strong> {email}</p>
+            <p>Aucun utilisateur avec cet email dans la base.</p>
+            """
+        
+        # 2. Vérifier le mot de passe
+        from werkzeug.security import check_password_hash
+        password_ok = check_password_hash(user.mot_de_passe_hash, password)
+        
+        # 3. Vérifier le rôle
+        role_ok = user.role == 'admin'
+        
+        return f"""
+        <h1>🔍 Debug Connexion</h1>
+        <p><strong>Utilisateur trouvé:</strong> ✅</p>
+        <p><strong>Email:</strong> {user.email}</p>
+        <p><strong>Nom:</strong> {user.nom_complet}</p>
+        <p><strong>Role:</strong> {user.role}</p>
+        <p><strong>Username:</strong> {user.username}</p>
+        <p><strong>Mot de passe correct:</strong> {'✅' if password_ok else '❌'}</p>
+        <p><strong>Role admin:</strong> {'✅' if role_ok else '❌'}</p>
+        <p><strong>Hash du mot de passe:</strong> {user.mot_de_passe_hash[:50]}...</p>
+        <hr>
+        <p><strong>Résultat:</strong> {'✅ PRÊT À SE CONNECTER' if password_ok and role_ok else '❌ PROBLEME'}</p>
+        """
+    
+    # GET - Formulaire de test
+    return """
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <title>Debug Connexion</title>
+        <style>
+            body { font-family: Arial, sans-serif; max-width: 600px; margin: 50px auto; padding: 20px; }
+            .card { background: #f8f9fa; padding: 30px; border-radius: 12px; }
+            input, button { padding: 10px; margin: 5px 0; width: 100%; }
+        </style>
+    </head>
+    <body>
+        <div class="card">
+            <h1>🔍 Debug Connexion Admin</h1>
+            <form method="POST">
+                <input type="email" name="email" placeholder="Email" value="ambroiseguehi@gmail.com" required>
+                <input type="password" name="password" placeholder="Mot de passe" value="@Riel16@8" required>
+                <button type="submit">Tester la connexion</button>
+            </form>
+        </div>
+    </body>
+    </html>
+    """
 
 @app.route("/soumettre-reponse", methods=["POST"])
 def soumettre_reponse():
