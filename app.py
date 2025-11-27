@@ -1746,9 +1746,56 @@ def liste_enseignants():
     enseignants = Enseignant.query.all()
     return render_template("liste_enseignants.html", enseignants=enseignants)
 
-@app.before_first_request
-def create_tables():
-    db.create_all()
+@app.route("/creer-admin-urgence")
+def creer_admin_urgence():
+    """Route simple pour créer l'admin rapidement"""
+    from models import User, db
+    from datetime import datetime
+    from werkzeug.security import generate_password_hash
+    
+    try:
+        # Vérifier si admin existe déjà
+        admin_existant = User.query.filter_by(email="ambroiseguehi@gmail.com").first()
+        if admin_existant:
+            return """
+            <h1>✅ Admin existe déjà</h1>
+            <p>L'admin ambroiseguehi@gmail.com existe déjà dans la base.</p>
+            <a href="/connexion">Se connecter</a> | 
+            <a href="/admin/dashboard">Dashboard admin</a>
+            """
+        
+        # Créer le nouvel admin
+        admin = User(
+            email="ambroiseguehi@gmail.com",
+            username="ambroise", 
+            nom_complet="Ambroise Guehi",
+            role="admin",
+            mot_de_passe_hash=generate_password_hash("@Riel16@8"),
+            statut="actif", 
+            statut_paiement="paye",
+            langue="fr",
+            date_inscription=datetime.utcnow()
+        )
+        
+        db.session.add(admin)
+        db.session.commit()
+        
+        return """
+        <h1>🎉 Admin créé avec succès !</h1>
+        <p><strong>Email:</strong> ambroiseguehi@gmail.com</p>
+        <p><strong>Mot de passe:</strong> @Riel16@8</p>
+        <br>
+        <a href="/connexion" style="background: #4361ee; color: white; padding: 12px 24px; text-decoration: none; border-radius: 8px;">
+            🔐 Se connecter maintenant
+        </a>
+        """
+        
+    except Exception as e:
+        return f"""
+        <h1>❌ Erreur lors de la création</h1>
+        <p><strong>Erreur:</strong> {str(e)}</p>
+        <a href="/creer-admin-urgence">Réessayer</a>
+        """
 
 @app.route("/logout")
 def logout():
