@@ -208,6 +208,7 @@ def init_admin():
     except Exception as e:
         return f"❌ Erreur lors de la création: {str(e)}"
 
+
 @app.route("/eleve/remediations")
 def eleve_remediations():
     username = request.args.get("username")
