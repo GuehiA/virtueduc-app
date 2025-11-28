@@ -112,7 +112,7 @@ with app.app_context():
         import traceback
         traceback.print_exc()
 
-        
+
 # Configuration OpenAI
 OPENAI_API_KEY = os.environ.get('OPENAI_API_KEY', '')
 if OPENAI_API_KEY:
@@ -5018,40 +5018,78 @@ def login_eleve():
     if request.method == 'POST':
         email = request.form.get("email")
         mot_de_passe = request.form.get("mot_de_passe")
+        
+        print(f"🔍 Tentative de connexion élève: {email}")
+        
         eleve = User.query.filter_by(email=email, role="élève").first()
 
-        if eleve and eleve.verifier_mot_de_passe(mot_de_passe):
-            # Vérifier si l'essai est expiré
-            if eleve.essai_est_expire():
-                flash("Votre période d'essai gratuit de 48h est terminée. Veuillez vous abonner.", "error")
-                return render_template("login_eleve.html", lang=session.get('lang', 'fr'), parent_connecte=parent_connecte)
+        if eleve:
+            print(f"✅ Élève trouvé: {eleve.nom_complet}")
+            print(f"🔑 Vérification mot de passe...")
             
-            # Afficher le temps restant pour l'essai
-            if eleve.est_en_essai_gratuit():
-                temps_restant = eleve.temps_restant_essai()
-                heures_restantes = int(temps_restant.total_seconds() / 3600)
-                jours_restants = int(temps_restant.total_seconds() / 86400)
-                
-                if jours_restants > 0:
-                    message = f"Essai gratuit : {jours_restants} jour(s) restant(s)"
-                else:
-                    message = f"Essai gratuit : {heures_restantes} heure(s) restante(s)"
-                
-                flash(message, "info")
-
-            # Connexion - IMPORTANT: on ne supprime pas la session parent
-            session['eleve_id'] = eleve.id
-            session['eleve_username'] = eleve.username
+            # DEBUG: Afficher le hash pour vérifier
+            print(f"📧 Email: {email}")
+            print(f"🔐 Hash dans la base: {eleve.mot_de_passe_hash[:50]}...")
             
-            # Redirection selon le contexte
-            if parent_connecte:
-                flash(f"Connecté en tant qu'élève : {eleve.nom_complet}", "success")
-            return redirect(url_for('dashboard_eleve'))
+            password_ok = eleve.verifier_mot_de_passe(mot_de_passe)
+            print(f"🎯 Mot de passe correct: {password_ok}")
+            
+            if password_ok:
+                print("✅ Connexion réussie!")
+                # ... le reste du code de connexion ...
+            else:
+                print("❌ Mot de passe incorrect")
+                flash("Identifiants incorrects", "error")
         else:
+            print(f"❌ Aucun élève trouvé avec l'email: {email}")
+            # DEBUG: Lister tous les élèves
+            tous_les_eleves = User.query.filter_by(role="élève").all()
+            print(f"📊 Élèves dans la base: {[e.email for e in tous_les_eleves]}")
             flash("Identifiants incorrects", "error")
 
     lang = session.get('lang', 'fr')
     return render_template("login_eleve.html", lang=lang, parent_connecte=parent_connecte)
+
+@app.route("/test-creer-eleve")
+def test_creer_eleve():
+    """Crée un élève de test pour debug"""
+    try:
+        from werkzeug.security import check_password_hash
+        
+        # Vérifier si l'élève test existe déjà
+        eleve_test = User.query.filter_by(email="test@eleve.com").first()
+        
+        if not eleve_test:
+            eleve = User(
+                email="test@eleve.com",
+                username="testeleve",
+                nom_complet="Élève Test",
+                role="élève",
+                statut="actif",
+                langue="fr"
+            )
+            eleve.mot_de_passe = "password123"  # Utilise le setter
+            
+            db.session.add(eleve)
+            db.session.commit()
+            
+            # Vérifier le hash
+            eleve_refresh = User.query.filter_by(email="test@eleve.com").first()
+            password_ok = check_password_hash(eleve_refresh.mot_de_passe_hash, "password123")
+            
+            return f"""
+            <h1>Élève de test créé</h1>
+            <p>Email: test@eleve.com</p>
+            <p>Mot de passe: password123</p>
+            <p>Hash créé: {eleve_refresh.mot_de_passe_hash[:50]}...</p>
+            <p>Vérification: {'✅ OK' if password_ok else '❌ ÉCHEC'}</p>
+            <a href="/login-eleve">Tester la connexion</a>
+            """
+        else:
+            return f"Élève test existe déjà: {eleve_test.mot_de_passe_hash[:50]}..."
+            
+    except Exception as e:
+        return f"Erreur: {str(e)}"
 
 @app.before_request
 def before_request():
