@@ -72,7 +72,6 @@ app.config["UPLOAD_FOLDER"] = UPLOAD_FOLDER
 # 🔌 Initialisation des extensions
 db.init_app(app)
 migrate = Migrate(app, db)  # ⬅️ MIGRATE APRÈS db.init_app(app)
-
 # 🔥 INITIALISATION AUTOMATIQUE DES TABLES ET DONNÉES
 with app.app_context():
     try:
@@ -101,33 +100,6 @@ with app.app_context():
             print("✅ Admin créé")
         else:
             print("✅ Admin existe déjà")
-        
-        # Vérifier les niveaux
-        if Niveau.query.count() == 0:
-            print("🔧 Création des niveaux...")
-            niveaux_data = [
-                {"nom": "Préscolaire", "nom_en": "Preschool", "ordre": 1},
-                {"nom": "1ère année", "nom_en": "1st Grade", "ordre": 2},
-                {"nom": "2ème année", "nom_en": "2nd Grade", "ordre": 3},
-                {"nom": "3ème année", "nom_en": "3rd Grade", "ordre": 4},
-                {"nom": "4ème année", "nom_en": "4th Grade", "ordre": 5},
-                {"nom": "5ème année", "nom_en": "5th Grade", "ordre": 6},
-                {"nom": "6ème année", "nom_en": "6th Grade", "ordre": 7},
-                {"nom": "Secondaire 1", "nom_en": "Secondary 1", "ordre": 8},
-                {"nom": "Secondaire 2", "nom_en": "Secondary 2", "ordre": 9},
-                {"nom": "Secondaire 3", "nom_en": "Secondary 3", "ordre": 10},
-                {"nom": "Secondaire 4", "nom_en": "Secondary 4", "ordre": 11},
-                {"nom": "Secondaire 5", "nom_en": "Secondary 5", "ordre": 12},
-            ]
-            
-            for data in niveaux_data:
-                niveau = Niveau(**data)
-                db.session.add(niveau)
-            
-            db.session.commit()
-            print("✅ Niveaux créés")
-        else:
-            print(f"✅ {Niveau.query.count()} niveaux existent déjà")
             
     except Exception as e:
         print(f"❌ Erreur initialisation: {e}")
@@ -671,7 +643,33 @@ Format strict attendu :
         dashboard_url=dashboard_url
     )
 
-
+@app.route("/admin/creer-niveaux")
+@admin_required
+def admin_creer_niveaux():
+    """Route admin pour créer les niveaux des 3 systèmes éducatifs"""
+    try:
+        niveaux_data = [
+            # SYSTÈME QUÉBÉCOIS
+            {"nom": "Préscolaire", "nom_en": "Preschool"},
+            {"nom": "1ère année", "nom_en": "1st Grade"},
+            # ... TOUS LES NIVEAUX QUE VOUS VOULEZ ...
+        ]
+        
+        created = 0
+        for data in niveaux_data:
+            if not Niveau.query.filter_by(nom=data["nom"]).first():
+                niveau = Niveau(**data)
+                db.session.add(niveau)
+                created += 1
+        
+        db.session.commit()
+        
+        return f"✅ {created} niveaux créés! <a href='/admin/dashboard'>Retour</a>"
+        
+    except Exception as e:
+        return f"❌ Erreur: {str(e)}"
+    
+    
 @app.route("/admin/creer-test-sommatif-ia", methods=["GET", "POST"])
 def creer_test_sommatif_ia():
     # 🔒 Vérification d'accès - maintenant pour enseignants aussi
