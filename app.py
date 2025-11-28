@@ -34,9 +34,24 @@ from models import (
 app = Flask(__name__)
 load_dotenv()
 
-# 🔧 CONFIGURATION POUR RENDER
+# 🔧 CONFIGURATION POUR RENDER - CORRIGÉE
 app.secret_key = os.environ.get('SECRET_KEY', 'dev-key-change-in-production')
-app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get('DATABASE_URL', 'sqlite:///database.db')
+
+# 🔥 CONFIGURATION POSTGRESQL POUR RENDER - SOLUTION DÉFINITIVE
+DATABASE_URL = os.environ.get('DATABASE_URL')
+if DATABASE_URL and DATABASE_URL.startswith('postgres://'):
+    # Correction pour SQLAlchemy
+    app.config["SQLALCHEMY_DATABASE_URI"] = DATABASE_URL.replace('postgres://', 'postgresql://', 1)
+    print("🎯 PostgreSQL Render DÉTECTÉ et CONFIGURÉ")
+elif DATABASE_URL and DATABASE_URL.startswith('postgresql://'):
+    # Déjà au bon format
+    app.config["SQLALCHEMY_DATABASE_URI"] = DATABASE_URL
+    print("🎯 PostgreSQL déjà au bon format")
+else:
+    # Fallback SQLite pour développement local
+    app.config["SQLALCHEMY_DATABASE_URI"] = 'sqlite:///database.db'
+    print("🔧 SQLite pour développement local")
+
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
 # ✅ CONFIGURATION STRIPE CORRECTE - CLÉ VALIDE
@@ -58,7 +73,67 @@ app.config["UPLOAD_FOLDER"] = UPLOAD_FOLDER
 db.init_app(app)
 migrate = Migrate(app, db)  # ⬅️ MIGRATE APRÈS db.init_app(app)
 
-# Configuration OpenAI
+# 🔥 INITIALISATION AUTOMATIQUE DES TABLES ET DONNÉES
+with app.app_context():
+    try:
+        print("🔧 Vérification/création des tables...")
+        db.create_all()
+        print("✅ Tables créées/vérifiées")
+        
+        # Vérifier si l'admin existe
+        admin = User.query.filter_by(role='admin').first()
+        
+        if not admin:
+            print("🔧 Création de l'admin...")
+            admin = User(
+                email="ambroiseguehi@gmail.com",
+                username="ambroise",
+                nom_complet="Ambroise Guehi",
+                role="admin",
+                mot_de_passe_hash=generate_password_hash("@Riel16@8"),
+                statut="actif",
+                statut_paiement="paye",
+                langue="fr",
+                date_inscription=datetime.utcnow()
+            )
+            db.session.add(admin)
+            db.session.commit()
+            print("✅ Admin créé")
+        else:
+            print("✅ Admin existe déjà")
+        
+        # Vérifier les niveaux
+        if Niveau.query.count() == 0:
+            print("🔧 Création des niveaux...")
+            niveaux_data = [
+                {"nom": "Préscolaire", "nom_en": "Preschool", "ordre": 1},
+                {"nom": "1ère année", "nom_en": "1st Grade", "ordre": 2},
+                {"nom": "2ème année", "nom_en": "2nd Grade", "ordre": 3},
+                {"nom": "3ème année", "nom_en": "3rd Grade", "ordre": 4},
+                {"nom": "4ème année", "nom_en": "4th Grade", "ordre": 5},
+                {"nom": "5ème année", "nom_en": "5th Grade", "ordre": 6},
+                {"nom": "6ème année", "nom_en": "6th Grade", "ordre": 7},
+                {"nom": "Secondaire 1", "nom_en": "Secondary 1", "ordre": 8},
+                {"nom": "Secondaire 2", "nom_en": "Secondary 2", "ordre": 9},
+                {"nom": "Secondaire 3", "nom_en": "Secondary 3", "ordre": 10},
+                {"nom": "Secondaire 4", "nom_en": "Secondary 4", "ordre": 11},
+                {"nom": "Secondaire 5", "nom_en": "Secondary 5", "ordre": 12},
+            ]
+            
+            for data in niveaux_data:
+                niveau = Niveau(**data)
+                db.session.add(niveau)
+            
+            db.session.commit()
+            print("✅ Niveaux créés")
+        else:
+            print(f"✅ {Niveau.query.count()} niveaux existent déjà")
+            
+    except Exception as e:
+        print(f"❌ Erreur initialisation: {e}")
+        import traceback
+        traceback.print_exc()
+
 # Configuration OpenAI
 OPENAI_API_KEY = os.environ.get('OPENAI_API_KEY', '')
 if OPENAI_API_KEY:
@@ -75,6 +150,104 @@ def admin_required(f):
             return redirect(url_for("login_admin"))
         return f(*args, **kwargs)
     return decorated_function
+
+# ... (le reste de votre code avec toutes vos routes reste inchangé) ...
+
+# 🔥 ROUTE URGENCE POUR CRÉER LES TABLES (au cas où)
+@app.route("/creer-tables-urgence")
+def creer_tables_urgence():
+    """Route URGENCE pour créer les tables"""
+    try:
+        with app.app_context():
+            db.create_all()
+            
+            # Vérifier les tables
+            from sqlalchemy import inspect
+            inspector = inspect(db.engine)
+            tables = inspector.get_table_names()
+            
+            return f"""
+            <h1>✅ Tables créées avec succès !</h1>
+            <p><strong>Tables créées:</strong> {len(tables)}</p>
+            <ul>
+                {"".join(f"<li>{table}</li>" for table in tables)}
+            </ul>
+            <a href="/creer-admin-simple" style="background: #4361ee; color: white; padding: 12px 24px; text-decoration: none; border-radius: 8px; display: inline-block; margin: 10px;">
+                🎯 Créer l'admin maintenant
+            </a>
+            """
+    except Exception as e:
+        return f"""
+        <h1>❌ Erreur création tables</h1>
+        <p><strong>Erreur:</strong> {str(e)}</p>
+        <a href="/creer-tables-urgence">🔄 Réessayer</a>
+        """
+
+@app.route("/creer-admin-simple")
+def creer_admin_simple():
+    """Route simple pour créer l'admin"""
+    try:
+        # Vérifier si admin existe déjà
+        admin_existant = User.query.filter_by(email="ambroiseguehi@gmail.com").first()
+        if admin_existant:
+            return """
+            <h1>✅ Admin existe déjà</h1>
+            <p>L'admin est déjà créé dans la base de données.</p>
+            <a href="/connexion" style="background: #4361ee; color: white; padding: 12px 24px; text-decoration: none; border-radius: 8px; display: inline-block; margin: 10px;">
+                🔐 Se connecter
+            </a>
+            """
+        
+        # Créer l'admin
+        admin = User(
+            email="ambroiseguehi@gmail.com",
+            username="ambroise",
+            nom_complet="Ambroise Guehi",
+            role="admin",
+            mot_de_passe_hash=generate_password_hash("@Riel16@8"),
+            statut="actif",
+            statut_paiement="paye", 
+            langue="fr",
+            date_inscription=datetime.utcnow()
+        )
+        
+        db.session.add(admin)
+        db.session.commit()
+        
+        return """
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <title>Admin Créé</title>
+            <style>
+                body { font-family: Arial, sans-serif; text-align: center; padding: 50px; }
+                .success { background: #d4edda; color: #155724; padding: 20px; border-radius: 10px; margin: 20px 0; }
+                .btn { background: #4361ee; color: white; padding: 12px 24px; text-decoration: none; border-radius: 8px; display: inline-block; margin: 10px; }
+            </style>
+        </head>
+        <body>
+            <div class="success">
+                <h1>🎉 Admin créé avec succès !</h1>
+                <p><strong>Email:</strong> ambroiseguehi@gmail.com</p>
+                <p><strong>Mot de passe:</strong> @Riel16@8</p>
+            </div>
+            
+            <a href="/connexion" class="btn">🔐 Se connecter maintenant</a>
+            <br>
+            <a href="/admin/dashboard" class="btn" style="background: #06d6a0;">📊 Accéder au Dashboard Admin</a>
+        </body>
+        </html>
+        """
+        
+    except Exception as e:
+        return f"""
+        <h1>❌ Erreur lors de la création</h1>
+        <p><strong>Erreur:</strong> {str(e)}</p>
+        <a href="/creer-admin-simple" style="background: #ef476f; color: white; padding: 10px 20px; text-decoration: none; border-radius: 8px;">
+            🔄 Réessayer
+        </a>
+        """
+
 
 def login_required(f):
     @wraps(f)
