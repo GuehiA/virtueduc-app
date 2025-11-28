@@ -669,7 +669,7 @@ def admin_creer_niveaux():
     except Exception as e:
         return f"❌ Erreur: {str(e)}"
     
-    
+
 @app.route("/admin/creer-test-sommatif-ia", methods=["GET", "POST"])
 def creer_test_sommatif_ia():
     # 🔒 Vérification d'accès - maintenant pour enseignants aussi
@@ -1916,57 +1916,6 @@ def supprimer_enseignant():
 def liste_enseignants():
     enseignants = Enseignant.query.all()
     return render_template("liste_enseignants.html", enseignants=enseignants)
-
-@app.route("/creer-admin-urgence")
-def creer_admin_urgence():
-    """Route simple pour créer l'admin rapidement"""
-    from models import User, db
-    from datetime import datetime
-    from werkzeug.security import generate_password_hash
-    
-    try:
-        # Vérifier si admin existe déjà
-        admin_existant = User.query.filter_by(email="ambroiseguehi@gmail.com").first()
-        if admin_existant:
-            return """
-            <h1>✅ Admin existe déjà</h1>
-            <p>L'admin ambroiseguehi@gmail.com existe déjà dans la base.</p>
-            <a href="/connexion">Se connecter</a> | 
-            <a href="/admin/dashboard">Dashboard admin</a>
-            """
-        
-        # Créer le nouvel admin
-        admin = User(
-            email="ambroiseguehi@gmail.com",
-            username="ambroise", 
-            nom_complet="Ambroise Guehi",
-            role="admin",
-            mot_de_passe_hash=generate_password_hash("@Riel16@8"),
-            statut="actif", 
-            statut_paiement="paye",
-            langue="fr",
-            date_inscription=datetime.utcnow()
-        )
-        
-        db.session.add(admin)
-        db.session.commit()
-        
-        return """
-        <h1>🎉 Admin créé avec succès !</h1>
-        <p><strong>Email:</strong> ambroiseguehi@gmail.com</p>
-        <p><strong>Mot de passe:</strong> @Riel16@8</p>
-        <br>
-        <a href="/connexion" style="background: #4361ee; color: white; padding: 12px 24px; text-decoration: none; border-radius: 8px;">
-            🔐 Se connecter maintenant
-        </a>
-        """
-        
-    except Exception as e:
-        return f"""
-        <h1>❌ Erreur lors de la création</h1>
-        <p><strong>Erreur:</strong> {str(e)}</p>
-        <a href="/creer-admin-urgence">Réessayer</a>
-        """
 
 @app.route("/logout")
 def logout():
@@ -3254,75 +3203,6 @@ def telecharger_pdf(email):
         print(f"Traceback: {traceback.format_exc()}")
         error_msg = "Erreur lors de la génération du PDF" if lang == 'fr' else "Error generating PDF"
         return f"{error_msg}: {str(e)}", 500
-
-@app.route("/creer-admin-simple")
-def creer_admin_simple():
-    """Route ultra-simple pour créer l'admin"""
-    from models import User, db
-    from werkzeug.security import generate_password_hash
-    from datetime import datetime
-    
-    try:
-        # Vérifier si admin existe déjà
-        admin_existant = User.query.filter_by(email="ambroiseguehi@gmail.com").first()
-        if admin_existant:
-            return """
-            <h1>✅ Admin existe déjà</h1>
-            <p>L'admin est déjà créé dans la base de données.</p>
-            <a href="/connexion" style="background: #4361ee; color: white; padding: 12px 24px; text-decoration: none; border-radius: 8px; display: inline-block; margin: 10px;">
-                🔐 Se connecter
-            </a>
-            """
-        
-        # Créer l'admin
-        admin = User(
-            email="ambroiseguehi@gmail.com",
-            username="ambroise",
-            nom_complet="Ambroise Guehi",
-            role="admin",
-            mot_de_passe_hash=generate_password_hash("@Riel16@8"),
-            statut="actif",
-            statut_paiement="paye", 
-            langue="fr",
-            date_inscription=datetime.utcnow()
-        )
-        
-        db.session.add(admin)
-        db.session.commit()
-        
-        return """
-        <!DOCTYPE html>
-        <html>
-        <head>
-            <title>Admin Créé</title>
-            <style>
-                body { font-family: Arial, sans-serif; text-align: center; padding: 50px; }
-                .success { background: #d4edda; color: #155724; padding: 20px; border-radius: 10px; margin: 20px 0; }
-                .btn { background: #4361ee; color: white; padding: 12px 24px; text-decoration: none; border-radius: 8px; display: inline-block; margin: 10px; }
-            </style>
-        </head>
-        <body>
-            <div class="success">
-                <h1>🎉 Admin créé avec succès !</h1>
-                <p><strong>Email:</strong> ambroiseguehi@gmail.com</p>
-                <p><strong>Mot de passe:</strong> @Riel16@8</p>
-            </div>
-            
-            <a href="/connexion" class="btn">🔐 Se connecter maintenant</a>
-            <br>
-            <a href="/admin/dashboard" class="btn" style="background: #06d6a0;">📊 Accéder au Dashboard Admin</a>
-        </body>
-        </html>
-        """
-        
-    except Exception as e:
-        return f"""
-        <h1>❌ Erreur lors de la création</h1>
-        <p><strong>Erreur:</strong> {str(e)}</p>
-        <a href="/creer-admin-simple" style="background: #ef476f; color: white; padding: 10px 20px; text-decoration: none; border-radius: 8px;">
-            🔄 Réessayer
-        </a>
-        """
 
 
 
