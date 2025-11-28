@@ -72,17 +72,20 @@ app.config["UPLOAD_FOLDER"] = UPLOAD_FOLDER
 # 🔌 Initialisation des extensions
 db.init_app(app)
 migrate = Migrate(app, db)  # ⬅️ MIGRATE APRÈS db.init_app(app)
-# 🔥 INITIALISATION AUTOMATIQUE DES TABLES ET DONNÉES
+
+# 🔥 INITIALISATION INTELLIGENTE - PROTECTION DES DONNÉES
 with app.app_context():
     try:
-        print("🔧 Vérification/création des tables...")
-        db.create_all()
-        print("✅ Tables créées/vérifiées")
+        # Vérifier si la table User existe déjà
+        from sqlalchemy import inspect
+        inspector = inspect(db.engine)
         
-        # Vérifier si l'admin existe
-        admin = User.query.filter_by(role='admin').first()
-        
-        if not admin:
+        if 'users' not in inspector.get_table_names():
+            print("🔧 Première initialisation - création des tables...")
+            db.create_all()
+            print("✅ Tables créées")
+            
+            # Créer l'admin SEULEMENT à la première initialisation
             print("🔧 Création de l'admin...")
             admin = User(
                 email="ambroiseguehi@gmail.com",
@@ -99,13 +102,17 @@ with app.app_context():
             db.session.commit()
             print("✅ Admin créé")
         else:
-            print("✅ Admin existe déjà")
+            print("✅ Base de données déjà initialisée")
+            # Compter les utilisateurs pour debug
+            user_count = User.query.count()
+            print(f"📊 Utilisateurs dans la base: {user_count}")
             
     except Exception as e:
         print(f"❌ Erreur initialisation: {e}")
         import traceback
         traceback.print_exc()
 
+        
 # Configuration OpenAI
 OPENAI_API_KEY = os.environ.get('OPENAI_API_KEY', '')
 if OPENAI_API_KEY:
